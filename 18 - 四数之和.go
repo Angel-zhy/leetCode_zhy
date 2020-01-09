@@ -5,22 +5,52 @@ import (
 	"sort"
 )
 
+func fourSum3(nums []int, target int) [][]int {
+	l := len(nums)
+	res := make([][]int, 0)
+	if l<4 {return res}
+	// a,b,c,d四指针
+	sort.Ints(nums)
+	var sum int
+	for a:=0; a<l-3; a++ {	// 最左指针
+		if a>0 && nums[a]==nums[a-1] {  // 剔除重复项
+			continue
+		}
+		for b:=a+1; b<l-2; b++ {	// 次左指针
+			if b>a+1 && nums[b]==nums[b-1] {  // 剔除重复项
+				continue
+			}
+			// 内层双指针
+			for c, d := b+1, l-1; c<d; {
+				sum = nums[a] + nums[b] + nums[c] + nums[d]
+				switch {
+				case sum < target:
+					c++
+					for c<d && nums[c]==nums[c-1] {c++} 	// 剔除重复项
+				case sum > target:
+					d--
+					for c<d && nums[d]==nums[d+1] {d--}		// 剔除重复项
+				default:	// sum = target
+					res = append(res, []int{nums[a], nums[b], nums[c], nums[d]})	// 找到可行解且不重复
+					d--
+					for c<d && nums[d]==nums[d+1] {d--}		// 剔除重复项
+					c++
+					for c<d && nums[c]==nums[c-1] {c++} 	// 剔除重复项
+				}
+			}
+		}
+	}
+
+	return res
+}
+
 func fourSum(nums []int, target int) [][]int {
-    if len(nums) < 4 {
-    	return nil
+	if len(nums) < 4 {
+		return nil
 	}
 	sort.Ints(nums) //排序
 	var res [][]int
-    var temp []int
-	if len(nums) == 4 {
-        if nums[0]+nums[1]+nums[2]+nums[3] == target{
-        	temp = append(temp,nums[0],nums[1],nums[2],nums[3])
-        	res = append(res,temp)
-        	return res
-		}else{
-			return nil
-		}
-	}
+	var temp []int
 	sLen := len(nums)
 	for i:=0; i<sLen-3; i++ {
 		// 不存在 (很重要，有可能减少很多步操作)
@@ -33,57 +63,46 @@ func fourSum(nums []int, target int) [][]int {
 		}
 		// 此时i对应的固定值 + 最大的三个值都小于目标值，无需遍历；跳过num[i](增大固定值)，再来判断
 		if nums[i]+nums[sLen-3]+nums[sLen-2]+nums[sLen-1]<target {
-			continue
+			continue   //只能跳过，不能使用break,因为num[i]的值在下一次循环中可以变大（重点！！！)
 		}
 		//  重复项 (有结果的组合，在前一个i是已经得出结果)
 		if i>0 && nums[i] == nums[i-1] {
 			continue
 		}
+
 		for j:= i+1; j< sLen-2; j++ {   //第2个固定值循环倒数第3个数集客，后面还有2个指针
-		      //不存在 (此时j所对应的、两个指针指向最小值时，相加已经大于目标值)
-		      if nums[i] + nums[j] + nums[j+1] + nums[j+2] > target {
-		      	  break
-			  }
-			  //不存在 ，两指针指向最大值
-			  if nums[i] + nums[j] + nums[sLen-2] + nums[sLen-1] < target {
-                 continue
-			  }
-			  //重复项
-			  if j>i+1 && nums[j] == nums[j-1]{
-			  	 continue
-			  }
-			  start := j+1 //左指针
-			  end := sLen-1 //右指针
-			  for start < end {
-			  	   sum := nums[i] + nums[j] + nums[start] + nums[end] //四数之和
-				   //fmt.Println(sum)
-			  	   if sum < target {
-			  	   	   start++
-				   }else if sum > target {
-					   end--
-				   }else{
-					   temp = append(temp, nums[i],nums[j],nums[start],nums[end])
-					   res = append(res,temp)
-					   temp = nil
-					   //去重
-					   if nums[start] == nums[start+1] { //查看下一个是否和当前数一样，一样就跳过
-						   start = start+1  //跳过下一个
-						   for nums[start] == nums[start+1] && start<end {
-							   start = start+1
-						   }
-					      continue
-					   }
-					   if nums[end]  == nums[end- 1] {
-					      end = end - 1
-						   for nums[end] == nums[end-1] && start<end {
-							   end = end - 1
-						   }
-					      continue
-					   }
-					   start++  //如果没有重复的值，默认移动左边的指针
-					   //end--  //（或者 移动右边的指针）
-				   }
-			  }
+			//不存在 (此时j所对应的、两个指针指向最小值时，相加已经大于目标值)
+			if nums[i] + nums[j] + nums[j+1] + nums[j+2] > target {
+				break
+			}
+			//   不存在 ，两指针指向最大值
+			if nums[i] + nums[j] + nums[sLen-2] + nums[sLen-1] < target {
+				continue   //只能跳过，不能使用break（重点！！！)
+			}
+			//重复项
+			if j>i+1 && nums[j] == nums[j-1]{
+				continue
+			}
+
+			start := j+1 //左指针
+			end := sLen-1 //右指针
+			for start < end {
+				sum := nums[i] + nums[j] + nums[start] + nums[end] //四数之和
+				//fmt.Println(sum)
+				if sum < target {
+					start++
+				}else if sum > target {
+					end--
+				}else{
+					temp = append(temp, nums[i],nums[j],nums[start],nums[end])
+					res = append(res,temp)
+					temp = nil
+					//去重
+					for start<end && nums[start]==nums[start+1] {start++}		// 剔除重复项
+					for start<end && nums[end]==nums[end-1] {end--}
+					start++
+				}
+			}
 		}
 	}
 	return res
@@ -120,8 +139,10 @@ func main(){
 
 
      //slice := []int{1, 0, -1, 0, -2, 1, 2}
-     slice := []int{-5,-2,1,1,3,5,5,5}
-     target := 4
+     //slice := []int{-5,-2,1,1,3,5,5,5}  //4
+     //slice := []int{-1,0,1,2,-1,-4}  //-1
+     slice := []int{0,4,-5,2,-2,4,2,-1,4}  //-1
+     target := 12
      fmt.Println(fourSum(slice,target))
 
 }
